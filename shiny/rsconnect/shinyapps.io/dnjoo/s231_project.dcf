@@ -1,0 +1,12 @@
+name: s231_project
+title: s231_project
+username:
+account: dnjoo
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 236639
+bundleId: 1080711
+url: https://dnjoo.shinyapps.io/s231_project/
+when: 1510910639.10714
+asMultiple: FALSE
+asStatic: FALSE
