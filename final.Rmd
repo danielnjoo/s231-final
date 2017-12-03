@@ -18,26 +18,24 @@ knitr::opts_chunk$set(cache = TRUE)
 source: https://www.kaggle.com/c/twitter-personality-prediction, data sent in private communication with competition holder from the privacy foundation
 
 ```{r}
-# setwd('/Users/danielnjoo/Desktop/231proj')
 library(readxl)
 library(tidyverse)
-data2<-readxl::read_xlsx('./twitter_data.xlsx')
+data<-readxl::read_xlsx('./twitter_data.xlsx')
 ```
 
 587 columns, 2930 observations 
 ```{r}
-data2 %>% dim()
+data %>% dim()
 ```
 
 18 broad categories
 ```{r}
-names(data2)[-grep("X__",names(data2))]
+names(data)[-grep("X__",names(data))]
 ```
 
 recreating LIWC variables requires LIWC API access from https://www.receptiviti.ai/liwc-api-get-started
 
 no extra information on variables given due to privacy concerns https://www.kaggle.com/c/twitter-personality-prediction/discussion/1886#latest-11996
-
 
 cluster into categories, then visualize categories across variables:
 - tweets/days, total tweets
@@ -49,47 +47,28 @@ cluster into categories, then visualize categories across variables:
 - IWC?
 
 
-#find elbowpoint for k
-```{r}
-rng<-2:20 #K from 2 to 20
-tries <-100 #Run the K Means algorithm 100 times
-avg.totw.ss <-integer(length(rng)) #Set up an empty vector to hold all of points
-for(v in rng){ # For each value of the range variable
- v.totw.ss <-integer(tries) #Set up an empty vector to hold the 100 tries
- for(i in 1:tries){
-   k.temp <- kmeans(all8, centers=v) #Run kmeans
-   v.totw.ss[i] <- k.temp$tot.withinss #Store the total withinss
- }
- avg.totw.ss[v-1] <-mean(v.totw.ss) #Average the 100 total withinss
-}
-plot(rng, avg.totw.ss, type="b", main="Total Within SS by Various K",
- ylab="Average Total Within Sum of Squares",
- xlab="Value of K")
 
-```
-
-#attempted visualizations
 ```{r}
-library(cluster)
-library(HSAUR)
-data(pottery)
-# km    <- kmeans(pottery,3)
-dissE <- daisy(all8, 3) 
-dE2   <- dissE^2
-sk2   <- silhouette(all8_clusters$cl, dE2)
-plot(sk2)
+#create categories based on # of clusters chosen
+big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
+names(big5) <- data[3, 2:6]
+
+num_cat <- 5
+
+kmeans(big5, num_cat)$cluster %>% 
+  as.data.frame() %>% 
+  rbind(0,.) %>%
+  rbind(0,.) %>%
+  rbind(0,.) %>% 
+  cbind(data) -> temp
 ```
 
 ```{r}
-cl5<-clara(big5,10)
-plot(silhouette(cl5))
+temp %>% lm(.~Kloutscore, data=.) -> mod
+mod %>% summary
 ```
 
-```{r} 
-#width .32, heuristics: https://www.stat.berkeley.edu/~spector/s133/Clus.html
-cl6<-clara(dark3,3)
-plot(silhouette(cl6))
-```
+
 
 
 
