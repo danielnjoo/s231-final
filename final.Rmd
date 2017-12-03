@@ -11,10 +11,10 @@ knitr::opts_chunk$set(cache = TRUE)
 ```
 
 
-# abstract
-  Using the Twitter data set, we made clusters to see whether there were distinct personality groups and found five distinct groups. Then we looked at how the personality type relates to Twitter presence. We looked at the number of tweets per day and total tweets, and found that ____. Then we looked at klout score, which measures popularity, followers, and friends. We then looked at the actions of these people, specifically their favorites and the type of tweets they do. We found that ___.
+# Abstract
+Using the Twitter data set, we made clusters to see whether there were distinct personality groups and found five groups to be most workable. Then we looked at how the personality categories we had created related to Twitter presence. We looked at the number of tweets per day and total tweets, and found that ____. Then we looked at klout score, which measures popularity, followers, and friends. We then looked at the actions of these people, specifically their favorites and the type of tweets they do. We found that ___.
 
-
+# Data
 source: https://www.kaggle.com/c/twitter-personality-prediction, data sent in private communication with competition holder from the privacy foundation
 
 ```{r}
@@ -33,23 +33,25 @@ data %>% dim()
 names(data)[-grep("X__",names(data))]
 ```
 
+# Analysis 
+
 recreating LIWC variables requires LIWC API access from https://www.receptiviti.ai/liwc-api-get-started
 
 no extra information on variables given due to privacy concerns https://www.kaggle.com/c/twitter-personality-prediction/discussion/1886#latest-11996
 
-cluster into categories, then visualize categories across variables:
+# Methodology (proposed)
+
+cluster (Big5/Dark3/All8) into categories, then attempt predictive models with the following variables (all of which should be recreate-able):
 - tweets/days, total tweets
 - klout 
 - followers
 - favorites
 - %retweets, replies, originals
 
-- IWC?
-
-
+if results are reasonable, model can be used to predict new user category given data
 
 ```{r}
-#create categories based on # of clusters chosen
+# create category labels based on BIG5 and NUM_CAT=5, and apply to dataset: temp
 big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
 names(big5) <- data[3, 2:6]
 
@@ -61,16 +63,87 @@ kmeans(big5, num_cat)$cluster %>%
   rbind(0,.) %>%
   rbind(0,.) %>% 
   cbind(data) -> temp
+names(temp)[1] <- 'cat'
 ```
 
 ```{r}
-temp %>% lm(.~Kloutscore, data=.) -> mod
-mod %>% summary
+# using Kloutscore to predict Big5 personality category
+
+# glm not possible since response categorical is non-binary!
+  # %>% glm(as.factor(cat)~as.numeric(Kloutscore),data =.) -> mod
+
+temp[4:nrow(temp),] %>% select(cat, Kloutscore) %>% na.omit -> temp2
+
+#attempt randomforest model instead
+
+library(caret)
+ctrl = trainControl(method="repeatedcv", number=10, repeats=5, selectionFunction = "oneSE")
+in_train = createDataPartition(temp2$cat, p=.75, list=FALSE)
+
+trf = train(as.factor(cat)~Kloutscore, data=temp2, method="rf", metric="Kappa",
+            trControl=ctrl, subset = in_train)
+
+# https://www.r-bloggers.com/predictive-modelling-fun-with-the-caret-package/
+# leaf = read.csv("leaf.csv", colClasses = c(Class = "factor"))
+# ctrl = trainControl(method="repeatedcv", number=10, repeats=5, selectionFunction = "oneSE")
+# in_train = createDataPartition(leaf$Class, p=.75, list=FALSE)
+# 
+# trf = train(Class ~ Eccentricity + Aspect_Ratio + Elongation +
+#               Solidity + Stoch_Convexity + Isoperimetric +
+#               Max_Ind_Depth + Lobedness + Avg_Intensity +
+#               Avg_Contrast + Smoothness + Third_Moment +
+#               Uniformity + Entropy, data=leaf, method="rf", metric="Kappa",
+#             trControl=ctrl, subset = in_train)
+# 
+# tgbm = train(Class ~ Eccentricity + Aspect_Ratio + Elongation +
+#               Solidity + Stoch_Convexity + Isoperimetric +
+#               Max_Ind_Depth + Lobedness + Avg_Intensity +
+#               Avg_Contrast + Smoothness + Third_Moment +
+#               Uniformity + Entropy, data=leaf, method="gbm", metric="Kappa",
+#             trControl=ctrl, subset = in_train, verbose=FALSE)
+```
+
+```{r}
+library(nnet)
+temp[4:nrow(temp),] %>% select(cat, Kloutscore, X__11) %>% na.omit -> temp2
+
+test <- multinom(cat~., data=temp2)
 ```
 
 
 
 
+```{r}
+big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
+names(big5) <- data[3, 2:6]
+pcabig5 <- big5 %>% 
+  lapply(as.numeric) %>% 
+  as.data.frame  %>% 
+  log %>% 
+  prcomp(center=T,scale=T)
 
+n <- 5
+
+#recreate x values from pca
+Xhat = pcabig5$x[,1:n] %*% t(pcabig5$rotation[,1:n])
+Xhat = scale(Xhat, center = -colMeans(big5), scale = FALSE)
+
+label <- kmeans(big5, n)$cluster
+data_w_labels <- cbind(big5, label)
+data_w_labels %>% filter(label==1) %>% 
+  group_by
+```
+
+```{r}
+library(reshape2)
+data_w_labels %>% group_by(label) %>% summarise(
+  openness = mean(openness),
+  conscientiousness = mean(conscientiousness),
+  extraversion = mean(extraversion),
+  agreeableness = mean(agreeableness),
+  neuroticism = mean(Neuroticism)
+) %>% melt(id.vars=c("label")) %>% ggplot(aes(variable,value)) + geom_bar(stat="identity") + facet_wrap(~label, nrow=1) + theme(axis.text.x = element_text(angle=90, vjust=0.5,hjust=1))
+
+```
 
 

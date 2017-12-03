@@ -27,6 +27,10 @@ shinyUI(fluidPage(
                  max = 10,
                  value = 3)
     )
-  )
+  ),
+  
+  hr(),
+  
+  plotOutput('clusterViz')
   
 ))

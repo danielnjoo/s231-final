@@ -8,6 +8,7 @@
 library(shiny)
 library(readxl)
 library(tidyverse)
+library(reshape2)
 data<-readxl::read_xlsx('./../twitter_data.xlsx')
 
 big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
@@ -37,11 +38,14 @@ pcaall8 <- all8 %>%
 
 shinyServer(function(input, output) {
   
+  
+  
   output$clusterPlot <- renderPlot({
     
     if (input$big5==T) {
       plot_data <- cbind(as.data.frame(pcabig5$x[, 1:2]), labels=as.factor(kmeans(big5, input$clusters)$cluster))  
       temp <- 'Big5 '
+      
     } else if (input$dark3==T){
       plot_data <- cbind(as.data.frame(pcadark3$x[, 1:2]), labels=as.factor(kmeans(dark3, input$clusters)$cluster))  
       temp <- 'Dark Triad '
@@ -49,7 +53,6 @@ shinyServer(function(input, output) {
       plot_data <- cbind(as.data.frame(pcaall8$x[, 1:2]), labels=as.factor(kmeans(all8, input$clusters)$cluster))  
       temp <- 'All 8 '
     }
-    
     title <- paste0(temp, "Profiles of Twitter Users Grouped in 2 Dimensions, k=", input$clusters)
     
     plot_data %>% 
@@ -57,6 +60,31 @@ shinyServer(function(input, output) {
       geom_point() +
       ggtitle(title)
     
+  })
+  
+  output$clusterViz <- renderPlot({
+    if (input$big5==T) {
+      # plot_data <- cbind(as.data.frame(pcabig5$x[, 1:2]), labels=as.factor(kmeans(big5, input$clusters)$cluster))  
+      temp <- 'Big5 '
+      label <- kmeans(big5, input$clusters)$cluster
+      data_w_labels <- cbind(big5, label)
+    } else if (input$dark3==T){
+      # plot_data <- cbind(as.data.frame(pcadark3$x[, 1:2]), labels=as.factor(kmeans(dark3, input$clusters)$cluster))  
+      temp <- 'Dark Triad '
+      label <- kmeans(big5, input$clusters)$cluster
+      data_w_labels <- cbind(dark3, label)
+    } else {
+      # plot_data <- cbind(as.data.frame(pcaall8$x[, 1:2]), labels=as.factor(kmeans(all8, input$clusters)$cluster))  
+      temp <- 'All 8 '
+      label <- kmeans(big5, input$clusters)$cluster
+      data_w_labels <- cbind(all8, label)
+    }
+    data_w_labels %>% melt(id.vars=c("label")) %>%
+      ggplot(aes(variable,value)) +
+        geom_bar(stat="identity") +
+        facet_wrap(~label, nrow=1) +
+        theme(axis.text.x = element_text(angle=90, vjust=0.5,hjust=1))
+
   })
   
 })
