@@ -63,87 +63,38 @@ kmeans(big5, num_cat)$cluster %>%
   rbind(0,.) %>%
   rbind(0,.) %>% 
   cbind(data) -> temp
+names(temp) <- temp[3,]
 names(temp)[1] <- 'cat'
 ```
 
 ```{r}
-# using Kloutscore to predict Big5 personality category
-
-# glm not possible since response categorical is non-binary!
-  # %>% glm(as.factor(cat)~as.numeric(Kloutscore),data =.) -> mod
-
-temp[4:nrow(temp),] %>% select(cat, Kloutscore) %>% na.omit -> temp2
-
-#attempt randomforest model instead
-
+library(randomForest)
 library(caret)
-ctrl = trainControl(method="repeatedcv", number=10, repeats=5, selectionFunction = "oneSE")
-in_train = createDataPartition(temp2$cat, p=.75, list=FALSE)
+set.seed(1)
 
-trf = train(as.factor(cat)~Kloutscore, data=temp2, method="rf", metric="Kappa",
-            trControl=ctrl, subset = in_train)
+temp2<-temp[4:nrow(temp),] %>% select(cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, posemo, negemo, WC)
 
-# https://www.r-bloggers.com/predictive-modelling-fun-with-the-caret-package/
-# leaf = read.csv("leaf.csv", colClasses = c(Class = "factor"))
-# ctrl = trainControl(method="repeatedcv", number=10, repeats=5, selectionFunction = "oneSE")
-# in_train = createDataPartition(leaf$Class, p=.75, list=FALSE)
-# 
-# trf = train(Class ~ Eccentricity + Aspect_Ratio + Elongation +
-#               Solidity + Stoch_Convexity + Isoperimetric +
-#               Max_Ind_Depth + Lobedness + Avg_Intensity +
-#               Avg_Contrast + Smoothness + Third_Moment +
-#               Uniformity + Entropy, data=leaf, method="rf", metric="Kappa",
-#             trControl=ctrl, subset = in_train)
-# 
-# tgbm = train(Class ~ Eccentricity + Aspect_Ratio + Elongation +
-#               Solidity + Stoch_Convexity + Isoperimetric +
-#               Max_Ind_Depth + Lobedness + Avg_Intensity +
-#               Avg_Contrast + Smoothness + Third_Moment +
-#               Uniformity + Entropy, data=leaf, method="gbm", metric="Kappa",
-#             trControl=ctrl, subset = in_train, verbose=FALSE)
-```
 
-```{r}
+temp2<-temp[4:nrow(temp),] %>% select(cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, posemo, negemo, WC
+,WPS	,Sixltr	,Dic	,funct	,pronoun	,ppron	,i	,we	,you	,shehe	,they	,ipron	,article	,verb	,auxverb	,past	,present	,future	,adverb	,preps,	conj, negate,	quant,	number,	swear	,social	,family	,friend	,humans	,affect	,posemo	,negemo	,anx	,anger	,sad	,cogmech	,insight	,cause	,discrep	,tentat	,certain,	inhib,	incl,	excl,	percept,	see,	hear,	feel,	bio,	body,	health,	sexual,	ingest,	relativ,	motion,	space,	time,	work,	achieve,	leisure,	home,	money,	relig,	death,	assent,	nonfl,	filler,	Period,	Comma,	Colon,	SemiC,	QMark,	Exclam,	Dash,	Quote,	Apostro,	Parenth,	OtherP,	AllPct)
+
+train_ind <- sample(seq_len(nrow(temp2)), size = floor(0.9*nrow(temp2)))
+train <- temp2[train_ind,]
+test <- temp2[-train_ind,]
+
+mod <- train %>% na.omit %>% randomForest(as.factor(cat) ~ .,
+                      data=., 
+                      importance=TRUE, 
+                      ntree=2000)
+test$pred <- predict(mod, test)
+
+confusionMatrix(test$cat,test$pred)
+
 library(nnet)
-temp[4:nrow(temp),] %>% select(cat, Kloutscore, X__11) %>% na.omit -> temp2
-
-test <- multinom(cat~., data=temp2)
-```
+mod2 <- train %>% na.omit %>% multinom(as.factor(cat)~., data =.)
 
 
-
-
-```{r}
-big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
-names(big5) <- data[3, 2:6]
-pcabig5 <- big5 %>% 
-  lapply(as.numeric) %>% 
-  as.data.frame  %>% 
-  log %>% 
-  prcomp(center=T,scale=T)
-
-n <- 5
-
-#recreate x values from pca
-Xhat = pcabig5$x[,1:n] %*% t(pcabig5$rotation[,1:n])
-Xhat = scale(Xhat, center = -colMeans(big5), scale = FALSE)
-
-label <- kmeans(big5, n)$cluster
-data_w_labels <- cbind(big5, label)
-data_w_labels %>% filter(label==1) %>% 
-  group_by
-```
-
-```{r}
-library(reshape2)
-data_w_labels %>% group_by(label) %>% summarise(
-  openness = mean(openness),
-  conscientiousness = mean(conscientiousness),
-  extraversion = mean(extraversion),
-  agreeableness = mean(agreeableness),
-  neuroticism = mean(Neuroticism)
-) %>% melt(id.vars=c("label")) %>% ggplot(aes(variable,value)) + geom_bar(stat="identity") + facet_wrap(~label, nrow=1) + theme(axis.text.x = element_text(angle=90, vjust=0.5,hjust=1))
-
+# confusionMatrix(temp2$cat,temp2$pred)
 ```
 
 
