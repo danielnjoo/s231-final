@@ -32,15 +32,27 @@ pcaall8 <- all8 %>%
 shinyServer(function(input, output) {
   
   userTweetData <- eventReactive(input$showUserTweets, {
-      tweets <- userTimeline(input$twitterUser1, n = 100) #selects specified number of user tweets
-
-      tab <- twListToDF(tweets) #converts tweets and associated metrics in table format
-      tab2 <- tab[!duplicated(tab[,c('text')]),] #removes duplicated text 
-      tab2 <- tab2 %>% dplyr::select(text, favoriteCount)
+    withProgress(message = "Loading application", value = 0, {
+      tweets <- userTimeline(input$twitterUser1, n = 500) #selects specified number of user tweets
+      incProgress(0.7, detail = "Getting tweets")
+      # tab <- twListToDF(tweets) %>% .[!duplicated(tab[,c('text')]),] 
+      
+      tab <- twListToDF(tweets) %>% .[!duplicated(tab[,c('text')]),] %>% dplyr::select(text, favoriteCount, retweetCount, created,
+                                                                                isRetweet, retweeted, longitude, latitude) 
+      
+      
+      # create list of multiple result? and return that? datatable as above... what else?
+      
+      # tab <- twListToDF(tweets) #converts tweets and associated metrics in table format
+      # tab2 <- tab[!duplicated(tab[,c('text')]),] #removes duplicated text
+      
+      # tab2 <- tab2 %>% dplyr::select(text, favoriteCount)
       # tab2 <- tab2 %>% dplyr::select(text, favoriteCount, replyToSN, created, truncated, replyToSID, id, replyToUID, statusSource, screenName, retweetCount,
                                      # isRetweet, retweeted, longitude, latitude)
-      print(tab2)
-      return(tab2)
+      # print(tab2)
+      incProgress(0.3, detail = "Finishing...")
+      return(tab)
+    })
   })
   
   output$clusterPlot <- renderPlot({
@@ -65,6 +77,7 @@ shinyServer(function(input, output) {
   })
   
   output$clusterViz <- renderPlot({
+    set.seed(1) #reproducibility!!!!!
     if (input$big5==T) {
       temp <- 'Big5 '
       label <- kmeans(big5, input$clusters)$cluster
@@ -85,9 +98,16 @@ shinyServer(function(input, output) {
         theme(axis.text.x = element_text(angle=90, vjust=0.5,hjust=1))
   })
   
+  temp <- reactive ({
+    temp <- userTweetData()  
+    print(temp)
+  })
+  
+  
   output$userTweets <- renderDataTable({
     # print(userTweetData())
-    userTweetData()
+    # userTweetData()
+    temp
   })
   
 })

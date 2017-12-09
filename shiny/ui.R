@@ -17,9 +17,17 @@ shinyUI(fluidPage(
 
   title = "Twitter Personality Exploration",
   
-  plotOutput('clusterPlot'),
+  titlePanel("Twitter Personality Exploration"),
   
   hr(),
+  
+  h3("Cluster Visualization"),
+  
+  p("Visualized below in two dimensions (via PCA) is our dataset of Twitter users (n~=3000) when clustered according to a user-specified k. The subset and k you choose below will determine which subset of the dataset will be used throughout the rest of this Shiny App as well as the number of categories / personality types."),
+  
+  p("(NB: this methodology uses k-means clustering and so the resultant clusters are by definition 'different' from each other which should not be necessarily interpreted as meaning they are meaningful. Nonetheless, we saw useful clusters when k = 5.)"),
+  
+  plotOutput('clusterPlot'),
   
   fluidRow(
     column(5, offset = 1,
@@ -40,14 +48,26 @@ shinyUI(fluidPage(
   
   hr(),
   
+  h3("What Each Cluster Means, WRT Personality Scores"),
+  
+  p("The clusters created above are visualized below across your chosen subset's personality dimensions."),
+  
   plotOutput('clusterViz'),
   
   hr(),
   
-  div(style="display: inline-block;vertical-align:right; width: 150px;",textInput("twitterUser1", "Enter User", "hadleywickham")),
+  h3("Twitter Data"),
+  
+  p("Choose a user, note that the Twitter API does not provide 'an exhaustive source of Tweets. Not all Tweets will be indexed or made available via the search interface.'"),
+  
+  div(style="display: inline-block;vertical-align:right; width: 150px;",textInput("twitterUser1", "Enter User", "realDonaldTrump")),
   actionButton("showUserTweets", "Show User Tweets", style="color: #000000;background-color: #00aced;margin: 4px;"),
   fluidRow(
     dataTableOutput("userTweets")
-  )
+  ),
+  
+  hr(),
+  
+  h3("Exploring Yours User's Tweets")
   
 ))
