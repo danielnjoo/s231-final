@@ -199,6 +199,15 @@ mod2 <- train %>% na.omit %>% multinom(as.factor(cat)~., data =.)
 
 
 ```{r}
+library(twitteR)
+
+consumer_key <- "NIfnSrABY2sJy4CkxFNPX9dU4"
+consumer_secret <- "oSxr4XacD2Xu5OZ92SaF7WSlMU9aIenOWcbDpM9Lw1yZoet9lB"
+access_token <- "243835598-Gcf6tBZ1eiMFOUtasmBehLyUbTbLtCH45zfKXJLt"
+access_secret <- "86s0MJ2r43i40f7q1LvDCxCO9g943Pce5ZFiKqk8KVnwf"
+
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+
 tweets <- userTimeline("realDonaldTrump", n =500)
 tab <- twListToDF(tweets) %>% .[!duplicated(tab[,c('text')]),]
 tab2 <- tab[!duplicated(tab[,c('text')]),]
