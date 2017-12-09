@@ -76,8 +76,7 @@ visualizations %>%
 visualizations %>%
   ggplot(aes(y = openness, x = log(statuses_count))) +
   geom_point() +
-  geom_jitter() +
-  geom_smooth()
+  geom_jitter() 
 
 cor(visualizations)
 
