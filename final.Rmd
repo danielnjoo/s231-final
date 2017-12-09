@@ -57,7 +57,7 @@ if results are reasonable, model can be used to predict new user category given 
 big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
 names(big5) <- data[3, 2:6]
 
-num_cat <- 3
+num_cat <- 5
 
 kmeans(big5, num_cat)$cluster %>% 
   as.data.frame() %>% 
@@ -85,31 +85,67 @@ plot_data %>%
   geom_point() 
 ```
 
+
+# predicting with 100 nearest neighbors classes
+
 ```{r}
+library(dbscan)
 correct=0
 preds<-c()
+set.seed(2)
+
+# test
+
+# data_with_cat<-temp[4:nrow(temp),] %>% select(cat, openness, conscientiousness, Neuroticism, agreeableness, extraversion) %>% na.omit
+# 
+# data_with_cat <- data_with_cat %>% mutate(
+#   cat = as.factor(cat),
+#   openness = as.numeric(openness),
+#   conscientiousness= as.numeric(conscientiousness),
+#   Neuroticism = as.numeric(Neuroticism),
+#   agreeableness = as.numeric(agreeableness),
+#   extraversion = as.numeric(extraversion)
+#   
+# )
+
+# actual
+
+data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg,  WC) %>% na.omit
+
+data_with_cat <- data_with_cat %>% mutate(
+  cat = as.factor(cat),
+  kloutscore = parse_number(kloutscore),
+  followers_count = parse_number(followers_count),
+  PercentOrigTweets = parse_number(PercentOrigTweets),
+  PercentRT = parse_number(PercentRT),
+  PercentReplies = parse_number(PercentReplies),
+  AllTweetsAvg = parse_number(AllTweetsAvg),
+  WC = parse_number(WC)
+)
+
 
 for (i in 1:100){
+  
+  # data_with_cat<-temp[4:nrow(temp),] %>% select(cat, psychopathy, narcissism, Machiavellianism) %>% na.omit
+  
+  #random row
+  rand <- sample(nrow(data_with_cat),1)
+  
+  #take random row, calculate 100 nearest neighbors and get their ids
+  data_with_cat[rand,] %>% rbind(data_with_cat) %>% data.matrix %>% kNN(x=.,k=100) %>% .$id %>% head(1) -> closest_100_ids
    
-data_with_cat<-temp[4:nrow(temp),] %>% select(cat, openness, conscientiousness, Neuroticism, agreeableness, extraversion) %>% na.omit
-#random row
-rand <- sample(nrow(data_with_cat),1)
-
-#take random row, calculate 100 nearest neighbors and get their ids
-data_with_cat[rand,] %>% rbind(data_with_cat) %>% data.matrix %>% kNN(x=.,k=100) %>% .$id %>% head(1) -> closest_100_ids
- 
-#get `cat` for the 100 nearest neighbors, and find the `cat` that appears most -> pred, compare with actual
-prop.table(table(data_with_cat[closest_100_ids,'cat'])) %>% 
- data.frame %>% 
- arrange(desc(Freq)) %>% 
- head(1) %>% 
- select(Var1) -> pred
-
-data_with_cat[rand,'cat'] -> actual; print(paste0('pred is ', pred, ' actual is ', actual))
-
-preds<-c(preds,as.numeric(pred))
-
-if (actual==pred){correct=correct+1}
+  #get `cat` for the 100 nearest neighbors, and find the `cat` that appears most -> pred, compare with actual
+  prop.table(table(data_with_cat[closest_100_ids,'cat'])) %>% 
+   data.frame %>% 
+   arrange(desc(Freq)) %>% 
+   head(1) %>% 
+   select(Var1) -> pred
+  
+  data_with_cat[rand,'cat'] %>% as.numeric -> actual; print(paste0('pred is ', pred, ' actual is ', actual))
+  
+  preds<-c(preds,as.numeric(pred))
+  
+  if (actual==pred){correct=correct+1}
 
 }
 
@@ -117,17 +153,35 @@ paste0('accuracy: ', correct/100)
 prop.table(table(preds))
 ```
 
+# dark3
+
+```{r}
+dark3 <- data[4:nrow(data), 7:9] %>% sapply(., as.numeric) %>% as.data.frame()
+names(dark3) <- data[3, 7:9]
+
+num_cat <- 3
+
+kmeans(dark3, num_cat)$cluster %>% 
+  as.data.frame() %>% 
+  rbind(0,.) %>%
+  rbind(0,.) %>%
+  rbind(0,.) %>% 
+  cbind(data) -> temp
+names(temp) <- temp[3,]
+names(temp)[1] <- 'cat'
+```
+
+
+# random forest 
 
 ```{r}
 library(randomForest)
 library(caret)
 set.seed(1)
 
-temp2<-temp[4:nrow(temp),] %>% select(cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, posemo, negemo, WC)
+temp2<-temp[4:nrow(temp),] %>% select(cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg,  WC)
 
-
-temp2<-temp[4:nrow(temp),] %>% select(cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, posemo, negemo, WC
-,WPS	,Sixltr	,Dic	,funct	,pronoun	,ppron	,i	,we	,you	,shehe	,they	,ipron	,article	,verb	,auxverb	,past	,present	,future	,adverb	,preps,	conj, negate,	quant,	number,	swear	,social	,family	,friend	,humans	,affect	,posemo	,negemo	,anx	,anger	,sad	,cogmech	,insight	,cause	,discrep	,tentat	,certain,	inhib,	incl,	excl,	percept,	see,	hear,	feel,	bio,	body,	health,	sexual,	ingest,	relativ,	motion,	space,	time,	work,	achieve,	leisure,	home,	money,	relig,	death,	assent,	nonfl,	filler,	Period,	Comma,	Colon,	SemiC,	QMark,	Exclam,	Dash,	Quote,	Apostro,	Parenth,	OtherP,	AllPct)
+# ,WPS	,Sixltr	,Dic	,funct	,pronoun	,ppron	,i	,we	,you	,shehe	,they	,ipron	,article	,verb	,auxverb	,past	,present	,future	,adverb	,preps,	conj, negate,	quant,	number,	swear	,social	,family	,friend	,humans	,affect	,posemo	,negemo	,anx	,anger	,sad	,cogmech	,insight	,cause	,discrep	,tentat	,certain,	inhib,	incl,	excl,	percept,	see,	hear,	feel,	bio,	body,	health,	sexual,	ingest,	relativ,	motion,	space,	time,	work,	achieve,	leisure,	home,	money,	relig,	death,	assent,	nonfl,	filler,	Period,	Comma,	Colon,	SemiC,	QMark,	Exclam,	Dash,	Quote,	Apostro,	Parenth,	OtherP,	AllPct)
 
 train_ind <- sample(seq_len(nrow(temp2)), size = floor(0.9*nrow(temp2)))
 train <- temp2[train_ind,]
@@ -142,13 +196,86 @@ test$pred <- predict(mod, test)
 confusionMatrix(test$cat,test$pred)
 prop.table(table(temp2$cat))
 
-library(nnet)
-mod2 <- train %>% na.omit %>% multinom(as.factor(cat)~., data =.)
+# library(nnet)
+# mod2 <- train %>% na.omit %>% multinom(as.factor(cat)~., data =.)
 
 
 # confusionMatrix(temp2$cat,temp2$pred)
 ```
 
+# naive bayes on dark3
+
+https://stackoverflow.com/questions/10059594/a-simple-explanation-of-naive-bayes-classification?rq=1
+
+```{r}
+library(e1071)
+library(caTools)
+temp2<-temp[4:nrow(temp),] %>% select(cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg,  WC) %>%  na.omit
+
+temp2 %>% mutate(
+  cat = as.factor(cat),
+  kloutscore = parse_number(kloutscore),
+  followers_count = parse_number(followers_count),
+  PercentOrigTweets = parse_number(PercentOrigTweets),
+  PercentRT = parse_number(PercentRT),
+  PercentReplies = parse_number(PercentReplies),
+  AllTweetsAvg = parse_number(AllTweetsAvg),
+  WC = parse_number(WC)
+) -> temp2
+
+#80:20 split
+train_ind <- sample(seq_len(nrow(temp2)), size = floor(0.8*nrow(temp2)))
+train <- temp2[train_ind,]
+test <- temp2[-train_ind,]
+
+
+mod <- naiveBayes(as.factor(cat) ~.,train, laplace=2, na.action=na.pass)
+pred <- predict(mod, test, type='class') # returns class
+mean(pred==test$cat)
+
+# pred <- predict(mod, test, type='class') # returns probabilities
+
+#max pred % 
+# apply(pred, 1 , max)
+#pred
+# colnames(pred)[apply(pred,1,which.max)] -> preds
+# table(preds, test$cat)
+
+
+
+mod <- naiveBayes(temp2[,2:8], temp2[,1])
+table(predict(mod, temp2), temp2[,-1])
+
+# mod <- naiveBayes(cat~., data=train)
+table(predict(mod, test[,2:8]), test[,1])
+
+nb_test_predict <- predict(mod,test[,-1])
+
+train <- sample(nrow(temp2), ceiling(nrow(temp2) * .50))
+test <- temp2[-train,]
+mod <- naiveBayes(cat~., data=train)
+
+library(nnet)
+mod <- multinom(cat~., train)
+```
+
+
+
+```{r}
+data(iris)
+ 
+tem
+temp2$spl=sample.split(temp2,SplitRatio=0.7)
+# By using the sample.split() we are creating a vector with values TRUE and FALSE and by setting
+  # the SplitRatio to 0.7, we are splitting the original Iris dataset of 150 rows to 70% training
+  # and 30% testing data. 
+train=subset(iris, iris$spl==TRUE)#the subset of iris dataset for which spl==TRUE
+test=subset(iris, iris$spl==FALSE)
+ 
+nB_model <- naiveBayes(train[,1:4], train[,5]) 
+ 
+table(predict(nB_model, test[,-5]), test[,5])
+```
 
 
 ```{r}
