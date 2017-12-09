@@ -41,6 +41,54 @@ recreating LIWC variables requires LIWC API access from https://www.receptiviti.
 
 no extra information on variables given due to privacy concerns https://www.kaggle.com/c/twitter-personality-prediction/discussion/1886#latest-11996
 
+```{r}
+association1 <- data[4:nrow(data),] %>% 
+  sapply(., as.numeric) %>% 
+  as.data.frame()
+names(association1) <- data[3, ]
+visualizations <- association1 %>%
+  select("openness", "conscientiousness", "extraversion", "agreeableness", "Neuroticism", "Machiavellianism", "narcissism", "psychopathy", "followers_count", "statuses_count", "favourites_count", "kloutscore", "PercentOrigTweets", "PercentRT", "PercentReplies")
+visualizations %>%
+  ggplot(aes(x = PercentRT, y = psychopathy)) +
+  geom_point() +
+  geom_jitter() 
+visualizations %>%
+  filter(followers_count <= 5000) %>%
+  filter(followers_count >= 300) %>%
+  ggplot(aes(x = followers_count, y = agreeableness)) +
+  geom_point() +
+  geom_jitter()
+visualizations %>%
+  filter(statuses_count >= 3000) %>%
+  ggplot(aes(y = openness, x = statuses_count)) +
+  geom_point() +
+  geom_jitter() 
+visualizations %>%
+  filter(PercentRT >= .25) %>%
+  filter(statuses_count <= 10000) %>%
+  ggplot(aes(x = PercentRT, y = agreeableness)) +
+  geom_point() +
+  geom_jitter() 
+visualizations %>%
+  ggplot(aes(x = PercentRT, y = openness)) +
+  geom_point() +
+  geom_jitter() 
+visualizations %>%
+  ggplot(aes(y = openness, x = log(statuses_count))) +
+  geom_point() +
+  geom_jitter() +
+  geom_smooth()
+
+cor(visualizations)
+
+pairs(visualizations)
+
+str(visualizations)
+
+#y variables: openness, conscientiousness, extraversion, agreeableness, Neuroticism, Machiavellianism, narcissism, psychopathy
+#x variables: tweets/days, total tweets, klout, followers, favorites, %retweets, %replies, %originals
+```
+
 # Methodology (proposed)
 
 cluster (Big5/Dark3/All8) into categories, then attempt predictive models with the following variables (all of which should be recreate-able):
