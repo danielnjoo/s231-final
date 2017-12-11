@@ -11,15 +11,20 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Context
 - Trump Tweets  
-- 
+- Personality  
 
 ## Getting the Dataset
-
-
+- https://www.kaggle.com/c/twitter-personality-prediction  
+```{r}
+library(readxl)
+library(tidyverse)
+data<-readxl::read_xlsx('./twitter_data.xlsx')
+```
 
 ## Data Wrangling
+```{r}
 
-
+```
 
 ## Visualizing the Data
 
