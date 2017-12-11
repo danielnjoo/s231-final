@@ -3,7 +3,7 @@ library(readxl)
 library(tidyverse)
 library(reshape2)
 library(dbscan)
-data<-readxl::read_xlsx('./../twitter_data.xlsx')
+data<-readxl::read_xlsx('./twitter_data.xlsx')
 
 visualization <- data[4:nrow(data),] %>% 
   sapply(., as.numeric) %>% 
@@ -102,7 +102,7 @@ shinyServer(function(input, output) {
       max <- which.max(visualization$followers_count)
       visualization <- visualization[-max,]
       relExpX <- relExpX[-max]
-      # relExpY <- visualization$followers_count[-max]
+      relExpY <- visualization$followers_count
       yLabel <- "Followers Count"
     } else if (input$statuses_count==T){
       relExpY <- visualization$statuses_count
@@ -113,7 +113,10 @@ shinyServer(function(input, output) {
     }  else if (input$friends_count==T){
       relExpY <- visualization$friends_count
       yLabel <- "Friends Count" 
-    }  else if (input$kloutscore==T){
+    } else if (input$PercentOrigTweets==T){
+      relExpY <- visualization$PercentOrig
+      yLabel <- "Percent Original"
+    } else if (input$kloutscore==T){
       relExpY <- visualization$kloutscore
       yLabel <- "Kloutscore"
     } else if (input$PercentRT==T){
@@ -194,8 +197,8 @@ shinyServer(function(input, output) {
     
     if (input$followers_count2==T){ 
       max <- which.max(temp2$followers_count)
+      relExpY <- temp2[-max,]$followers_count
       temp2 <- temp2[-max,]
-      relExpX <- relExpX[-max]
       yLabel <- "Followers Count"
     } else if (input$statuses_count2==T){
       relExpY <- temp2$statuses_count
@@ -212,6 +215,9 @@ shinyServer(function(input, output) {
     } else if (input$PercentRT2==T){
       relExpY <- temp2$PercentRT
       yLabel <- "Percent Retweets"
+    } else if (input$PercentOrigTweets2==T){
+      relExpY <- temp2$PercentOrig
+      yLabel <- "Percent Original"
     } else {
       relExpY <- temp2$PercentReplies
       yLabel <- "Percent Replies"
