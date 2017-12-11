@@ -104,7 +104,7 @@ if results are reasonable, model can be used to predict new user category given 
 big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
 names(big5) <- data[3, 2:6]
 
-num_cat <- 5
+num_cat <- 3
 
 kmeans(big5, num_cat)$cluster %>% 
   as.data.frame() %>% 
@@ -116,30 +116,13 @@ names(temp) <- temp[3,]
 names(temp)[1] <- 'cat'
 ```
 
-```{r}
-big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
-names(big5) <- data[3, 2:6]
-pcabig5 <- big5 %>% 
-  lapply(as.numeric) %>% 
-  as.data.frame  %>% 
-  log %>% 
-  prcomp(center=T,scale=T)
-
-plot_data <- cbind(as.data.frame(pcabig5$x[, 1:2]), labels=as.factor(kmeans(big5, 5)$cluster))
-                   
-plot_data %>% 
-  ggplot(aes(PC1,PC2, col=labels)) +
-  geom_point() 
-```
-
-
 # predicting with 100 nearest neighbors classes
 
 ```{r}
 library(dbscan)
 correct=0
 preds<-c()
-set.seed(2)
+set.seed(6)
 
 # test
 
@@ -154,21 +137,35 @@ set.seed(2)
 #   extraversion = as.numeric(extraversion)
 #   
 # )
-
+# "followers_count", "statuses_count", "favourites_count", "kloutscore", 
+#                                           "PercentOrigTweets", "PercentRT", "PercentReplies
 # actual
 
-data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg,  WC) %>% na.omit
+# data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, WC) %>% na.omit
+
+data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, statuses_count, favourites_count) %>% na.omit
 
 data_with_cat <- data_with_cat %>% mutate(
   cat = as.factor(cat),
-  kloutscore = parse_number(kloutscore),
+  statuses_count = parse_number(statuses_count),
   followers_count = parse_number(followers_count),
-  PercentOrigTweets = parse_number(PercentOrigTweets),
-  PercentRT = parse_number(PercentRT),
-  PercentReplies = parse_number(PercentReplies),
-  AllTweetsAvg = parse_number(AllTweetsAvg),
-  WC = parse_number(WC)
+  # PercentOrigTweets = parse_number(PercentOrigTweets),
+  # PercentRT = parse_number(PercentRT),
+  # PercentReplies = parse_number(PercentReplies),
+  # statuses_count = parse_number(statuses_count),
+  favourites_count = parse_number(favourites_count)
 )
+# 
+# data_with_cat <- data_with_cat %>% mutate(
+#   cat = as.factor(cat),
+#   kloutscore = parse_number(kloutscore),
+#   followers_count = parse_number(followers_count),
+#   PercentOrigTweets = parse_number(PercentOrigTweets),
+#   PercentRT = parse_number(PercentRT),
+#   PercentReplies = parse_number(PercentReplies),
+#   AllTweetsAvg = parse_number(AllTweetsAvg),
+#   WC = parse_number(WC)
+# )
 
 
 for (i in 1:100){
@@ -198,6 +195,17 @@ for (i in 1:100){
 
 paste0('accuracy: ', correct/100)
 prop.table(table(preds))
+```
+
+```{r}
+rand <- sample(nrow(data_with_cat),1)
+data_with_cat[rand,] %>% rbind(data_with_cat) %>% data.matrix %>% kNN(x=.,k=100) %>% .$id %>% head(1) -> closest_100_ids
+prop.table(table(data_with_cat[closest_100_ids,'cat'])) %>% 
+    data.frame %>% 
+    arrange(desc(Freq))
+ data_with_cat[rand,'cat'] %>% as.numeric
+ 
+ #what if we weight first 25, next 25, differently?
 ```
 
 # dark3
@@ -336,8 +344,18 @@ access_secret <- "86s0MJ2r43i40f7q1LvDCxCO9g943Pce5ZFiKqk8KVnwf"
 setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
 
 tweets <- userTimeline("realDonaldTrump", n =500)
+
+twListToDF(tweets) -> temp
+
 tab <- twListToDF(tweets) %>% .[!duplicated(tab[,c('text')]),]
 tab2 <- tab[!duplicated(tab[,c('text')]),]
 ```
 
+```{r}
+getUser("realDonaldTrump") -> user
+user$followersCount
+user$favoritesCount
+user$statusesCount
+user$friendsCount
+```
 
