@@ -23,12 +23,14 @@ twitter_data <- read_excel("~/stat231/Projects/s231-final/shiny/twitter_data.xls
 
 ## Data Wrangling
 ```{r}
+library(tidyr)
+library(dplyr)
 twitterpersonality <- twitter_data[4:nrow(twitter_data),] %>% 
   sapply(., as.numeric) %>% 
   as.data.frame()
 names(twitterpersonality) <- twitter_data[3, ]
 twitterpersonality <- twitterpersonality %>%
-  select("openness", "conscientiousness", "extraversion", "agreeableness", "Neuroticism", "Machiavellianism", "narcissism", "psychopathy", "followers_count", "statuses_count", "favourites_count", "kloutscore", "PercentOrigTweets", "PercentRT", "PercentReplies")
+  dplyr::select("openness", "conscientiousness", "extraversion", "agreeableness", "Neuroticism", "Machiavellianism", "narcissism", "psychopathy", "followers_count", "statuses_count", "favourites_count", "kloutscore", "PercentOrigTweets", "PercentRT", "PercentReplies")
 ```
 
 ## Visualizing the Data
