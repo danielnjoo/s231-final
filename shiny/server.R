@@ -162,7 +162,8 @@ shinyServer(function(input, output) {
     plot_data %>% 
       ggplot(aes(PC1,PC2, col=labels)) +
       geom_point() +
-      ggtitle(title)
+      ggtitle(title) +
+      guides(col=guide_legend(title="Personality Type"))
     
   })
   

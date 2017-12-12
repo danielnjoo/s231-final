@@ -142,3 +142,104 @@ More meaningful, non-reproducible Twitter Attributes
 - Klout available through the Twitter API via partnership with Klout, but not through twitteR
 - "Not all Tweets will be indexed or made available via the search interface."
 
+
+Clustering
+========================================================
+3 types:
+- hierarchichal 
+- density-based
+- centroid-based
+  - given number of centroids (k), algorithm finds k centroids
+  - each centroid can be considered the "mean" of its group
+  
+Our approach:
+- cluster around personality dimensions (e.g. Big5), then used centroid membership to assign a category / personality type
+
+
+
+Prediction
+========================================================
+
+Method:
+- using the reproducible variables found in the dataset (Favourites, Followers, Friends, Statuses Count), find the 100 nearest neighbors 
+- get the personality type of these neighbors, and
+- select the highest occurring type as our prediction
+
+
+Prediction Example
+========================================================
+
+```{r echo=F}
+set.seed(1)
+
+consumer_key <- "NIfnSrABY2sJy4CkxFNPX9dU4"
+consumer_secret <- "oSxr4XacD2Xu5OZ92SaF7WSlMU9aIenOWcbDpM9Lw1yZoet9lB"
+access_token <- "243835598-Gcf6tBZ1eiMFOUtasmBehLyUbTbLtCH45zfKXJLt"
+access_secret <- "86s0MJ2r43i40f7q1LvDCxCO9g943Pce5ZFiKqk8KVnwf"
+
+library(twitteR)
+library(readxl)
+library(tidyverse)
+library(dbscan)
+
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+
+data<-readxl::read_xlsx('./../shiny/twitter_data.xlsx')
+big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
+names(big5) <- data[3, 2:6]
+kmeans(big5, 3)$cluster %>% 
+  as.data.frame() %>% 
+  rbind(0,.) %>%
+  rbind(0,.) %>%
+  rbind(0,.) %>% 
+  cbind(data) -> data_with_cat
+names(data_with_cat) <- data_with_cat[3,]
+names(data_with_cat)[1] <- 'cat'
+
+data_with_cat[-(1:4),] %>% dplyr::select(favourites_count, followers_count, friends_count, statuses_count) %>% 
+  mutate(
+    favourites_count = parse_number(favourites_count),
+    followers_count = parse_number(followers_count),
+    friends_count = parse_number(friends_count),
+    statuses_count = parse_number(statuses_count)
+  ) %>% na.omit -> others
+```
+
+```{r}
+getUser("askdrstats") -> user # Prof Horton's Twitter
+c(user$favoritesCount, user$followersCount, user$friendsCount, user$statusesCount) %>% as.data.frame() -> user
+```
+
+```{r echo=F}
+rownames(user) <- colnames(others)
+```
+
+```{r}
+t(user) %>% rbind(others) %>% data.matrix %>% kNN(x=.,k=100) %>% .$id %>% head()
+```
+
+Prediction Example
+========================================================
+
+```{r}
+t(user) %>% rbind(others) %>% data.matrix %>% kNN(x=.,k=100) %>% .$id %>% head(1) -> closest_100_ids
+
+prop.table(table(data_with_cat[closest_100_ids,'cat'])) %>% 
+  data.frame %>% 
+  arrange(desc(Freq)) %>% 
+  rename('Personality Type' = Var1, Probability = Freq) 
+```
+
+- type 2
+
+Conclusion
+========================================================
+
+Dataset
+- voluntary response bias
+- limited sample size (n=3000)
+
+Prediction methodology
+- 'weak' variables
+- limited number of variables
+

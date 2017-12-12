@@ -53,6 +53,8 @@ shinyUI(fluidPage(
   p("Further work might yield useful results if the more hetereogenous Twitter usage variables present in the 
     original dataset could be reproduced, or if a new larger dataset could be created and made accessible."),
   
+  hr(),
+  
   h3("Initial Exploration"),
   
   p("Choose a single personality dimension to explore."),
