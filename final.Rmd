@@ -122,7 +122,7 @@ names(temp)[1] <- 'cat'
 library(dbscan)
 correct=0
 preds<-c()
-set.seed(6)
+set.seed(3)
 
 # test
 
@@ -143,7 +143,7 @@ set.seed(6)
 
 # data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, WC) %>% na.omit
 
-data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, statuses_count, favourites_count) %>% na.omit
+# data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, statuses_count, favourites_count) %>% na.omit
 
 data_with_cat <- data_with_cat %>% mutate(
   cat = as.factor(cat),
@@ -152,7 +152,7 @@ data_with_cat <- data_with_cat %>% mutate(
   # PercentOrigTweets = parse_number(PercentOrigTweets),
   # PercentRT = parse_number(PercentRT),
   # PercentReplies = parse_number(PercentReplies),
-  # statuses_count = parse_number(statuses_count),
+  statuses_count = parse_number(statuses_count),
   favourites_count = parse_number(favourites_count)
 )
 # 
