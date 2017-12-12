@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+.presentation/Presentation-figure
+.presentation/Presentation_cache
+.presentation/Presentation_files
