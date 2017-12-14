@@ -1,0 +1,231 @@
+---
+title: "Personality + Twitter Presence: a Technical Appendix"
+author: "Margaret Chien, Amber Liu, Daniel Njoo"
+date: "12/18/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+Note to reader: to avoid code and plot replication, this appendix is meant to be accompanied by the interactive Shiny app we built (found here: danielnjoo.shinyapps.io/shiny/).
+
+# Abstract
+
+We explored one of the few available datasets that matches (self-reported) scores on a personality test with Twitter account metrics. We found that in the 3000-or-so available observations, personality scores on all 8 available dimensions (Big5 and Dark Triad) were unimodal and symmetric except for openness and psychopathy which were right and left skewed respectively. We also found relatively significant relationships between Twitter metrics such as Kloutscore and Percent Original Tweets, but we were unable to reproduce these variables for new Twitter users. We then built a prediction algorithm that would assign an out-of-sample Twitter user a 'personality type' based on its nearest neighbors in our dataset. Our model only fared marginally better than random chance, but results were promising and accurate classification appears feasible to us with a larger dataset and access to more meaningful variables, such as those derived from textual analysis.
+
+# Introduction
+
+We were interested in exploring how personality relates to online presence because as digitally-native millennials, we divulge enormous amounts of personal information about ourselves every day, and we all know that employers do a quick Google search before any hiring decision. So we wondered what do employers hope to infer from our online presence? Our hypothesis was that they hoped to infer some sense of what 'kind of person' somebody is from their Facebook, Twitter or Instagram.
+
+So in order to test this hypothesis we built a prediction algorithim to see if we could predict a user's personality type from metrics of online presence. We found a dataset that had both metrics of personality and online presence -- which is hard to find due to anonymity concerns. Of the clustering methods known to us, k-means made the most sense, so we used this to cluster the dataset, using cluster membership to represent the personality type a user belongs to. In this context, each type's 'average user' was represented by its cluster's centroid. 
+
+We predicted a 'wild' Twitter user's personality type by obtaining his/her reproducible Twitter metrics that also appeared in our dataset (favourites_count, followers_count, friends_count, statuses_count) using the twitteR package. We then used these variables to find the user's 100 finding the user's 100 nearest neighbors in our dataset (using the same k = # of centroids) and then chose the highest occuring type as our prediction.
+
+With k=3, when we tested our prediction algorithm's accuracy by running it 100 times on randomly sampled observations from the dataset (in-sample), we obtained a maximum accuracy of around 40% with certain seeds, but less than 33% or random guessing most of the time. 
+
+We hypothesized that this was due to the inherent variability in the underlying dataset (which can be evidenced by the large overlapping portions in the cluster visualizations -- even when the first 2 PCAs only represent <70% of total variability), our methodology to use k-means to create 'meaningful' categories, and the lack of strong correlations between the reproducible variables our prediction algorithm used and actual personality types.
+
+# Data
+
+```{r message=F, warning=F}
+library(readxl)
+library(tidyverse)
+data<-readxl::read_xlsx('./shiny/twitter_data.xlsx')
+```
+
+We obtained the dataset used in a Kaggle competition (https://www.kaggle.com/c/twitter-personality-prediction) hosted 5 years ago by the Online Privacy Foundation. This dataset was sent to us in private communication with a staff member of the Online Privacy Foundation.
+
+```{r}
+data %>% dim()
+names(data)[-grep("X__",names(data))]
+```
+
+Our dataset featured 587 columns, 2930 observations, and 18 broad categories of variable type.
+
+## Variables
+
+**Main variables of interest**:
+
+- Big5 and Dark Triad: these came from self-reported scores and were scaled from 0-7 and 0-5 respectively.
+
+**Other variables of interest**:
+
+- Favourites Count, Followers Count, Friends Count, Statuses Count (these were the reproducible ones), as well as Kloutscore, Percent Original, Percent Retweet, and Percent Replies. These were all numeric variables and are intuitively scaled; Kloutscore runs from 0-100 and is available through the Twitter API but not through the twitteR package.
+
+## Univariate analysis
+
+In terms of univariate analysis of the personality variables, we found unimodal symmetric distributions in all cases except for openness and psychopathy which were left and right skewed respectively. 
+
+In terms of univariate analysis of the Twitter attributes, we found extremely right skewed unimodal distributions for all the counts because of a few observations with millions of favourites, followers, friends, statuses.
+
+```{r echo=F}
+#fix column names
+data_with_names <- data[4:nrow(data),] %>% 
+  sapply(., as.numeric) %>% 
+  as.data.frame()
+names(data_with_names) <- data[3, ]
+
+#subset and remove ommitted data
+data_with_names %>% 
+  na.omit %>% 
+  select(favourites_count, followers_count, friends_count, statuses_count) -> temp
+
+paste0("max favourites count: ", max(temp$favourites_count), ", mean favourites count: ", round(mean(temp$favourites_count)), ", while sd was: ", round(sd(temp$favourites_count)))
+paste0("max followers count: ", max(temp$followers_count), ", mean followers count: ", round(mean(temp$followers_count)), ", while sd was: ", round(sd(temp$followers_count)))
+paste0("max friends count: ", max(temp$friends_count), ", mean friends count: ", round(mean(temp$friends_count)), ", while sd was: ", round(sd(temp$friends_count)))
+paste0("max statuses count: ", max(temp$statuses_count), ", mean statuses count: ", round(mean(temp$statuses_count)), ", while sd was: ", round(sd(temp$statuses_count)))
+```
+
+Meanwhile, the other Twitter metrics were unimodal except for Kloutscore (slightly bimodal) and all right skewed except for Percent Original which was symmetrical.
+
+All of these univariate plots can be explored in our interactive Shiny app (https://danielnjoo.shinyapps.io/shiny/).
+
+# Results
+
+Our main deliverables were the exploratory analysis we did and the prediction algorithm we built. 
+
+## Exploratory analysis
+
+The exploratory analysis can be categorized into three parts:
+
+(1) relationships between personality traits and Twitter attributes: we found meaningful relationships when Twitter attributes were logarithmically transformed, and between Openness and Favourites Count, and Narcissism and Kloutscore.
+
+(2) cluster creation: in the Shiny app, k can be selected and bar plots show what each cluster's centroid looks like, and might be considered the 'average' personality traits of a user in that personality type. We found meaningful results at k=3.
+
+(3) how clusters relate to Twitter behavior. We found meaningful differences in medians and IQRs (via boxplots) in Followers Count, Kloutscore, and Percent Original at k=3. This can be interpreted as meaning that with the 3 personality types created via k-means clustering, there were meaningful differences between these personality types in those 3 Twitter attributes.
+
+## Prediction algorithm
+
+Our prediction algorithm as explained earlier will be evaluated in the next section.
+
+# Diagnostics
+
+Below we test our prediction algorithm by running it 100 times on randomly sampled observations from the dataset (in-sample). It is first run with all 8 variables outlined early (`data_with_cat_full`), then with only the 4 variables that were reproducible using the twitteR package. 
+
+Proportion tables of the runs are also printed and demonstrate the models high bias towards one particular personality type.
+
+```{r, echo=F}
+# create category labels based on BIG5 and NUM_CAT=3, and apply to dataset: temp2
+big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
+names(big5) <- data[3, 2:6]
+
+num_cat <- 3
+
+#we rebind some 0s to the top of the dataset to make sure categories (created from subset that missed first 3 rows of the dataset, match up with other variables)
+kmeans(big5, num_cat)$cluster %>% 
+  as.data.frame() %>% 
+  rbind(0,.) %>%
+  rbind(0,.) %>%
+  rbind(0,.) %>% 
+  cbind(data) -> temp2
+names(temp2) <- temp2[3,]
+names(temp2)[1] <- 'cat'
+```
+
+```{r, echo=F}
+library(dbscan)
+correct=0
+preds<-c()
+set.seed(1)
+
+#select and omit
+data_with_cat<-temp2[4:nrow(temp2),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, statuses_count, favourites_count, friends_count) %>% na.omit
+
+#make sure numbers are read correctly due to ,'s 
+data_with_cat_full <- data_with_cat %>% mutate(
+  cat = as.factor(cat),
+  statuses_count = parse_number(statuses_count),
+  followers_count = parse_number(followers_count),
+  PercentOrigTweets = parse_number(PercentOrigTweets),
+  PercentRT = parse_number(PercentRT),
+  PercentReplies = parse_number(PercentReplies),
+  statuses_count = parse_number(statuses_count),
+  favourites_count = parse_number(favourites_count),
+  friends_count = parse_number(friends_count)
+) 
+
+#subset to reproducible variables
+data_with_cat_reproducible <- data_with_cat_full %>% select(cat,followers_count, friends_count, statuses_count, favourites_count)
+
+#evaluation function
+eval_mod <- function(df){
+  for (i in 1:100){
+    #random row
+    rand <- sample(nrow(df),1)
+    
+    #take random row, calculate 100 nearest neighbors and get their ids
+    df[rand,] %>% rbind(df) %>% data.matrix %>% kNN(x=.,k=100) %>% .$id %>% head(1) -> closest_100_ids
+     
+    #get `cat` for the 100 nearest neighbors, and find the `cat` that appears most -> pred, compare with actual
+    prop.table(table(df[closest_100_ids,'cat'])) %>% 
+     data.frame %>% 
+     arrange(desc(Freq)) %>% 
+     head(1) %>% 
+     select(Var1) -> pred
+    
+    data_with_cat[rand,'cat'] %>% as.numeric -> actual
+    # print(paste0('pred is ', pred, ' actual is ', actual)) #print statements for run-by-run diagnosis
+    
+    preds<-c(preds,as.numeric(pred))
+    
+    if (actual==pred){correct=correct+1}
+    if ((i %% 10)==0){print(paste0("at step ", i, ", cumulative accuracy is: ", correct/i))}
+  }
+  
+  print(paste0('accuracy: ', correct/100))
+  prop.table(table(preds))
+}
+
+print("with all 8 attributes")
+eval_mod(data_with_cat_full)
+
+print("with the 4 reproducible attributes")
+eval_mod(data_with_cat_reproducible)
+
+```
+
+```{r}
+# baseline prediction should be based on highest occurring category
+temp2$cat[-(1:3)] %>% table %>% prop.table
+```
+
+(With a seed of 1) 
+
+Against a baseline prediction of 37.7% (the highest occurring type: 3), our model using reproducible Twitter variables actually does worse than a heuristic of simply predicting 3 all the time, but it is still 4% better than random chance (37%). 
+
+The model using more meaningful but irreproducible Twitter variables fared better with a 42% predictive accuracy.
+
+Of course, one of the problems in our method is that we're evaluating this based on in-sample data that was used in the cluster making. If we were to make our method more sound, we would have to implement a train-test split. But as far as proof-of-concept goes, we think there is *some* validity in using Twitter attributes to predict personality type but we will evaluate this conclusion in the next section.
+ 
+# Conclusion
+
+The white elephant in the room regarding our approach is that the dataset was not only small (n<3000), but that it was also subject to huge **voluntary response bias**. A more sound approach to prediction would involve using a larger dataset that aimed to mitigate voluntary response bias.
+
+Further, an issue with using k-means to cluster our dataset into 'personality types', is that the centroid based approach of k-means results in groups that are by consequence of this approach different from each other. But this does not mean that these groups are necessarily meaningful. For example when looking at the cluster visualization plot in the Shiny app, we see that there are significant regions where points could conceivably belong to 2 or more groups.
+
+Worse yet, this visualization only maps the first 2 principal components of the clustered data, and as we see below in the case of the Big5 subset, these componenents don't even explain 80% of the variability in the 5 personality dimensions. Instead, they only explain 51.3%.
+
+```{r}
+#pca
+big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
+names(big5) <- data[3, 2:6]
+big5 %>% 
+  lapply(as.numeric) %>% 
+  as.data.frame  %>% 
+  log %>% 
+  prcomp(center=T,scale=T) %>% 
+  summary()
+```
+
+We conclude that our approach provides some proof-of-concept that personality types can be inferred from online presence if an appropriate dataset (or theoretical understanding of what constitutes a personality type) is used to create those personality types, as well as meaningful variables that measure online presence. Some of the most meaningful variables that we saw in the dataset were results of textual analysis (the LIWC API, their website https://liwc.wpengine.com/), which we were unable to reproduce due to lack of access to the API. 
+
+One plot is shown below between `negemo`, a measure of the negative emotions expressed in a user's Tweet language and a logarithmic transform of psychopathy.
+
+```{r warning=F}
+data_with_names %>% ggplot(aes(negemo, log(psychopathy)))+geom_point()+geom_smooth(se=F, method='lm')
+```
+
+

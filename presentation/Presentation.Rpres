@@ -10,7 +10,7 @@ library(readxl)
 library(tidyverse)
 library(tidyr)
 library(dplyr)
-twitter_data <- read_xlsx("./../shiny/twitter_data.xlsx")
+data <- read_xlsx("./../shiny/twitter_data.xlsx")
 
 ```
 
@@ -91,7 +91,9 @@ The Dataset
 
 Dimensions:  
 
-- 2930 rows, 587 columns
+```{r}
+data %>% dim
+```
 
 Groups of variables
 
@@ -106,13 +108,13 @@ Data Wrangling
 Original Variables:
 
 ```{r}
-names(twitter_data) %>% head(10)
+names(data) %>% head(10)
 ```
 
 Renamed Variables:
 
 ```{r}
-twitter_data[3, 1:10] %>% unlist(use.names=FALSE)
+data[3, 1:10] %>% unlist(use.names=FALSE)
 ```
 
 
@@ -184,7 +186,6 @@ library(dbscan)
 
 setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
 
-data<-readxl::read_xlsx('./../shiny/twitter_data.xlsx')
 big5 <- data[4:nrow(data),2:6] %>% sapply(., as.numeric) %>% as.data.frame()
 names(big5) <- data[3, 2:6]
 kmeans(big5, 3)$cluster %>% 
@@ -243,3 +244,4 @@ Prediction methodology
 - 'weak' variables
 - limited number of variables
 
+![image](./images/image5.png)
