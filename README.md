@@ -10,7 +10,7 @@ Amherst College Data Science (S231) Final Project, taught by [Alex Baldenko](htt
 
 ## Quick notes
 
-Our accompanying Shiny app can be found [here](danielnjoo.shinyapps.io/shiny/), and a hosted compiled version of our technical appendix can be found [here](___).
+Our accompanying Shiny app can be found [here](http://danielnjoo.shinyapps.io/shiny/), and a hosted compiled version of our technical appendix can be found [here](https://danielnjoo.github.io/data_investigations/other/technical_appendix).
 
 We highly recommend using RStudio.
 
