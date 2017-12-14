@@ -143,7 +143,7 @@ set.seed(3)
 
 # data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, AllTweetsAvg, WC) %>% na.omit
 
-# data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, statuses_count, favourites_count) %>% na.omit
+data_with_cat<-temp[4:nrow(temp),] %>% select (cat, kloutscore,followers_count,PercentOrigTweets, PercentRT,PercentReplies, statuses_count, favourites_count) %>% na.omit
 
 data_with_cat <- data_with_cat %>% mutate(
   cat = as.factor(cat),

@@ -5,13 +5,15 @@ library(twitteR)
 library(shiny)
 library(DT)
 
-consumer_key <- "NIfnSrABY2sJy4CkxFNPX9dU4"
-consumer_secret <- "oSxr4XacD2Xu5OZ92SaF7WSlMU9aIenOWcbDpM9Lw1yZoet9lB"
-access_token <- "243835598-Gcf6tBZ1eiMFOUtasmBehLyUbTbLtCH45zfKXJLt"
-access_secret <- "86s0MJ2r43i40f7q1LvDCxCO9g943Pce5ZFiKqk8KVnwf"
+# to access prediction function ----
 
+consumer_key <- "ENTER INFO HERE"
+consumer_secret <- "ENTER INFO HERE"
+access_token <- "ENTER INFO HERE"
+access_secret <- "ENTER INFO HERE"
 setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
 
+# to access prediction function ----
 
 shinyUI(fluidPage(
 
@@ -75,6 +77,27 @@ shinyUI(fluidPage(
     ),
     column(9,
            plotOutput('initialExp')
+    )
+  ),
+  
+  hr(),
+  
+  p("Choose a single Twitter attribute to explore."),
+  
+  fluidRow(
+    column(3,
+           p("Twitter Attributes"),
+           checkboxInput("favourites_count3", "Favourites Count", value=T),
+           checkboxInput("followers_count3", "Followers Count"),
+           checkboxInput("friends_count3", "Friends Count"),
+           checkboxInput("statuses_count3", "Statuses Count"),
+           checkboxInput("kloutscore3", "Kloutscore"),
+           checkboxInput("PercentOrigTweets3", "Percent Original"),
+           checkboxInput("PercentRT3", "Percent Retweet"),
+           checkboxInput("PercentReplies3", "Percent Replies")
+    ),
+    column(9,
+           plotOutput('initialExp2')
     )
   ),
   

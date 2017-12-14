@@ -71,6 +71,38 @@ shinyServer(function(input, output) {
     visualization %>% ggplot(aes(initialExpX)) + geom_density() + xlab(xLabel) + ggtitle(title)
   })
   
+  output$initialExp2 <- renderPlot({
+    if (input$followers_count3==T){ 
+      max <- which.max(visualization$followers_count)
+      visualization <- visualization[-max,]
+      initialExpX <- visualization$followers_count
+      xLabel <- "Followers Count"
+    } else if (input$statuses_count3==T){
+      initialExpX <- visualization$statuses_count
+      xLabel <- "Statuses Count"
+    } else if (input$favourites_count3==T){
+      initialExpX <- visualization$favourites_count
+      xLabel <- "Favourites Count"
+    } else if (input$friends_count3==T){
+      initialExpX <- visualization$friends_count
+      xLabel <- "Friends Count" 
+    } else if (input$PercentOrigTweets3==T){
+      initialExpX <- visualization$PercentOrig
+      xLabel <- "Percent Original"
+    } else if (input$kloutscore3==T){
+      initialExpX <- visualization$kloutscore
+      xLabel <- "Kloutscore"
+    } else if (input$PercentRT3==T){
+      initialExpX <- visualization$PercentRT
+      xLabel <- "Percent Retweets"
+    } else {
+      initialExpX <- visualization$PercentReplies
+      xLabel <- "Percent Replies"
+    }
+    title <- paste0(("Density plot of "), xLabel)
+    visualization %>% ggplot(aes(initialExpX)) + geom_density() + xlab(xLabel) + ggtitle(title)
+  })
+  
   output$relExp <- renderPlot({
     if (input$openness2==T){
       relExpX <- visualization$openness
